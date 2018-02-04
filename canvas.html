@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+	<title>HTML5 Canvas图表DEMO演示</title>
+</head>
+<style type="text/css">
+*{
+	margin: 0px;
+	padding: 0px;
+}
+body,html{
+	margin: 0px;
+	padding: 0px;
+}
+
+
+</style>
+<body>
+	<div style="width: 1488px;text-align: center;height: 30px;line-height: 30px;margin:0 auto;">canvas动态图表</div>
+	<div style="width: 38px;height: 246px;position: absolute;left: 0px;top: 0px;margin-right: 10px;"></div>
+	<canvas id="mycanvas" width="900" height="400" style="background: #fffdf6;box-shadow: 2px 2px 2px #c3c0c0;margin-left: 20px;">你的浏览器不支持canvas</canvas>
+	<canvas id="canvasarc" width="500" height="300" style="background: #fffdf6;margin-left: 10px">你的浏览器不支持canvas</canvas>
+	<canvas id="canvasline" width="1400" height="400" style="background: #fffdf6;margin-left: 10px;display: block;">你的浏览器不支持canvas</canvas>
+</body>
+</html>
+<script type="text/javascript">
+//柱形图
+function aGoAchar(data,ydata){
+	var canvas=document.getElementById("mycanvas");
+	var ctx,smargin,swidth,sheight,loginx,loginy,ynum,dx,dy,dX,dY;
+	var xnum=data.length;
+	if(canvas && canvas.getContext){
+		ctx=canvas.getContext("2d");
+	};
+	var ops=0;
+	var positionWz={};
+	var mouseTimer=null
+	var grd=ctx.createLinearGradient(0, 0, 0, 300);
+	 grd.addColorStop(0, 'green');
+     grd.addColorStop(1, 'rgba(67,203,36,1)');
+	initchar()  //图表初始化
+	huizhi()
+	animatecs()
+	function initchar(){
+		smargin=60;
+		swidth=canvas.width-smargin*2;
+		sheight=canvas.height-smargin*2;
+		loginx=canvas.width-smargin;
+		loginy=canvas.height-smargin;
+	}
+	//绘制
+	function huizhi(){
+		ctx.lineWidth=1;
+		ctx.fontSize="12px";
+		ctx.fillStyle="#000";
+		ctx.strokeStyle="#000";
+		//x轴
+		cgoing(smargin,loginy,loginx,loginy)
+		//y轴
+		cgoing(smargin,loginy,smargin,smargin)
+
+		drawMarkers()
+	}
+	//绘制方法
+	function cgoing(x,y,X,Y){
+		ctx.beginPath();
+		ctx.moveTo(x,y)
+		ctx.lineTo(X,Y); 
+		ctx.stroke();
+		 ctx.closePath();
+	} 
+	function drawMarkers(){
+		//x
+		var xw=parseInt(swidth/xnum)
+		var yw=parseInt(sheight/ydata.length)
+		for(var i=0;i<data.length;i++){
+			var allw=xw*(i+1) 
+			ctx.strokeStyle="#ccc";
+			ctx.lineWidth=1;
+			ctx.beginPath();
+			ctx.moveTo(allw+smargin,sheight+smargin);
+			ctx.lineTo(allw+smargin,sheight+15+smargin);
+			ctx.stroke();
+			ctx.fillText(data[i].year,(allw-xw/2)+smargin-8,sheight+15+smargin)
+			ctx.closePath();
+		}
+		
+		//y
+		for(var i=0;i<ydata.length;i++){
+			var ally=yw*(i+1); //50 100  sheight-
+			ctx.strokeStyle="#ccc";
+			ctx.lineWidth=1;
+			ctx.beginPath();
+			ctx.moveTo(smargin,ally+smargin-yw);
+			ctx.lineTo(swidth+smargin,ally+smargin-yw);
+			ctx.stroke();
+			ctx.closePath();
+			ctx.fillText(ydata[i],smargin-28,ally+smargin-yw+4);
+		}
+		ctx.beginPath()
+		ctx.fillStyle="#333"
+		ctx.font="12px Arial";
+		ctx.fillText("年份",swidth/2,sheight+40+smargin)
+		ctx.fillText("产量",2,sheight/2)
+		ctx.closePath();
+	}
+	
+	function  animatecs(mouseMove){
+		var xw=parseInt(swidth/xnum)
+		
+		for(var i=0;i<data.length;i++){
+			var allws=xw*i;
+			var ttns=data[i].num;
+			if(ttns>ops){
+				ttns=ops
+			}
+			dx=smargin+xw/4+allws;
+			dy=loginy-Math.ceil(ttns/(4200/sheight));
+			dX=xw/2;
+			dY=Math.ceil(ttns/(4200/sheight))-1;
+			dhuizhi(dx,dy,dX,dY,mouseMove)
+			
+			ctx.fillStyle="#333"
+			ctx.fillText(ttns,dx+5,dy-3)
+			
+		}
+		if(ops<3260){
+			ops+=80;
+			setTimeout(function(){
+				ctx.clearRect(0,0,canvas.width, canvas.height);
+				huizhi()
+				animatecs()
+			},10)
+		}
+	}
+	function dhuizhi(dx,dy,dX,dY,mouseMove){
+		ctx.beginPath()
+		ctx.rect(dx,dy,dX,dY)
+		if(mouseMove && ctx.isPointInPath(positionWz.x,positionWz.y)){
+			ctx.fillStyle = "green";
+		}else{
+			ctx.fillStyle = grd;
+        	ctx.strokeStyle = grd;
+		}
+		ctx.fill();
+		ctx.closePath();
+	}
+	canvas.addEventListener("mousemove",function(e){
+		var e=e || window.event;
+		// if( e.layerX || e.layerX==0 ){
+                   // positionWz.x = e.layerX;
+                   // positionWz.y = e.layerY;
+                //}else if( e.offsetX || e.offsetX==0 ){
+                    positionWz.x = e.offsetX;
+                    positionWz.y = e.offsetY;
+                //}
+		//clearTimeout(mouseTimer);
+       // mouseTimer = setTimeout(function(){
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+         	 huizhi()
+            animatecs(true);
+        //},10);
+	})
+}
+
+var data=[
+	{year:2012,num:2141},
+	{year:2013,num:1499},
+	{year:2014,num:3260},
+	{year:2015,num:1170},
+	{year:2016,num:970},
+	{year:2017,num:2350},
+	{year:2017,num:3824},
+]
+var ydata=[4200,3500,2800,2100,1400,700]
+aGoAchar(data,ydata)
+//饼状图
+function drawCircle(canvasarc, data_arr, color_arr, text_arr){
+	var arc=document.getElementById(canvasarc);
+	if(arc&&arc.getContext){
+		var arctc=arc.getContext("2d");
+	}
+	var radius=arc.height/2 - 20;  //半径
+	var ox=radius+20,oy=radius+20;  //圆心
+	var startAngle=0; //起始弧度
+	var endAngle=0;  //终止弧度
+	var cwidth=20,cheight=10;
+	var arcarr=[];
+	var arcnum=0;
+	for(var i=0;i<data_arr.length;i++){
+		arcnum=arcnum+data_arr[i]
+	};
+	for(var i=0;i<data_arr.length;i++){
+		arcarr.push(data_arr[i]/arcnum)
+	}
+	//动态态绘制
+	var oNum=0;
+	var allNum=50; //给定值 这个值和速度是相对的
+	var arcTime=null;
+	archuizhi();
+	function archuizhi(arcposition){
+		clearInterval(arcTime)	
+		arcTime=setInterval(function(){
+			oNum++;
+			if(arcposition){
+				clearInterval(arcTime)
+				oNum=allNum;
+			}else if(oNum>allNum){
+				clearInterval(arcTime);
+				arcTime=null;
+				return false;
+			}
+			arctc.clearRect(0,0,ox*2+20,oy*2+20)
+			for(var j=0;j<data_arr.length;j++){	
+				endAngle=endAngle+arcarr[j]*(oNum/allNum)*Math.PI*2;  //加变量
+				arctc.fillStyle=color_arr[j];
+				arctc.beginPath();
+				arctc.moveTo(ox,oy);
+				arctc.arc(ox,oy,radius,startAngle,endAngle,false)
+				if(arcposition && arctc.isPointInPath(arcposition.x,arcposition.y)){
+					arctc.moveTo(ox,oy);
+					arctc.arc(ox,oy,radius+5,startAngle,endAngle,false)
+				}
+				arctc.closePath();
+				arctc.fill();
+				startAngle=endAngle;
+				if(j==data_arr.length-1){
+					startAngle=0;
+					endAngle=0;
+				}
+			}
+		},10)
+	}
+	//绘制说明
+	arcifo();
+	function arcifo(){
+		for(var i=0;i<text_arr.length;i++){
+			arctc.fillStyle=color_arr[i];
+			arctc.strokeStyle=color_arr[i];
+			arctc.font="12px 微软雅黑"
+			arctc.beginPath();
+			arctc.rect(radius*2+80,20*(i+1),cwidth,cheight);
+			arctc.fillText(text_arr[i],radius*2+110,20*(i+1)+8)
+			arctc.fillText(text_arr[i],radius*2+110,20*(i+1)+8)
+			arctc.fillText(parseInt(arcarr[i]*100)+'%',radius*2+170,20*(i+1)+8);
+			arctc.closePath();
+			arctc.fill();
+			
+		}
+	}
+	var mouseclear=null;
+	arc.addEventListener("mousemove",function(e){
+		var arcposition=[]
+		var e=e || window.event;
+		arcposition.x=e.offsetX;
+		arcposition.y=e.offsetY;
+		clearTimeout(mouseclear)
+		mouseclear=setTimeout(function(){
+			archuizhi(arcposition)
+		},20)
+		
+	})
+}
+
+function arcinit() {
+    //绘制饼图
+    //比例数据和颜色
+    var data_arr = [50, 750, 100, 200];
+    var color_arr = ["#00a000", "#00AABB", "#FFAA00", "#FF4400"];
+    var text_arr = ["第一季度", "第二季度", "第三季度", "第四季度"]; 
+    drawCircle("canvasarc", data_arr, color_arr, text_arr);
+}
+window.onload=arcinit;
+
+//折线图
+var data=[
+	{year:2012,num:2141},
+	{year:2013,num:1499},
+	{year:2014,num:3260},
+	{year:2015,num:1170},
+	{year:2016,num:970},
+	{year:2017,num:2350},
+	{year:2018,num:3824},
+]
+var ydata=[4200,3500,2800,2100,1400,700]
+function lines(data,ydata){
+	var cline=document.getElementById("canvasline");
+	var canvasline;
+	var cwidth=cline.width;
+	var cheight=cline.height;
+	var padding=50;
+	var xline=parseInt((cwidth-padding*2)/data.length);
+	var yline=parseInt((cheight-padding*2)/ydata.length)
+	if(cline && cline.getContext){
+		canvasline=cline.getContext("2d");
+	}
+	lineInit()
+	function lineInit(){
+		//x轴
+		canvasline.strokeStyle="#333";
+		canvasline.lineWidth=1;
+		canvasline.beginPath();
+		canvasline.moveTo(padding,cheight-padding);
+		canvasline.lineTo(cwidth-padding,cheight-padding);
+		canvasline.stroke();
+		canvasline.closePath();
+		
+		//y轴
+		canvasline.beginPath();
+		canvasline.strokeStyle="#333";
+		canvasline.moveTo(padding,cheight-padding);
+		canvasline.lineTo(padding,padding);
+		canvasline.stroke();
+		canvasline.closePath();
+		//绘制坐标点
+		linehuizhi()
+		lineWhere()
+	}
+	function linehuizhi(){
+		//x轴
+		for(var i=0;i<data.length;i++){
+			var linext=xline*(i+1)
+			canvasline.fillStyle="#666";
+			canvasline.strokeStyle="#cccccc";
+			canvasline.lineWidth=1
+			canvasline.font='12px 微软雅黑';
+			canvasline.beginPath()
+			canvasline.moveTo(padding+linext+1,cheight-padding-1);
+			canvasline.lineTo(padding+linext+1,padding);
+			canvasline.stroke();
+			canvasline.fillText(data[i].year,padding+linext-12,cheight-padding+15);
+			canvasline.closePath();
+		}
+		//y轴
+		for(var i=0;i<ydata.length;i++){
+			var lineyt=yline*(i+1);
+			canvasline.fillStyle="#666";
+			canvasline.strokeStyle="#cccccc";
+			canvasline.lineWidth=1
+			canvasline.font='12px 微软雅黑';
+			canvasline.beginPath();
+			canvasline.moveTo(padding,lineyt+padding-yline);
+			canvasline.lineTo(cwidth-padding,lineyt+padding-yline);
+			canvasline.stroke();
+			canvasline.fillText(ydata[i],padding-30,lineyt+padding-yline+4)
+			canvasline.closePath();
+		}
+	}
+	//绘制各点位置
+	var lineTime=null;
+	var isNow=0;
+	var end=50;
+	function lineWhere(){
+		var everyLen=(cheight-padding*2)/ydata[0];
+			for(var i=0;i<data.length-1;i++){
+				var linext=xline*(i+1);
+				var linenextx=xline*(i+2);
+				var lineyt=yline*(i+1);
+				canvasline.strokeStyle="red";
+				canvasline.lineWidth=2;
+					canvasline.beginPath();
+					canvasline.moveTo(padding+linext,cheight-Math.ceil(everyLen*data[i].num)-padding);
+					canvasline.lineTo(padding+linenextx,cheight-Math.ceil(everyLen*data[i+1].num)-padding);
+					canvasline.stroke();
+					canvasline.closePath();
+			}
+			for(var i=0;i<data.length;i++){
+				var linext=xline*(i+1);
+				var linenextx=xline*(i+2);
+				var lineyt=yline*(i+1);
+				canvasline.beginPath();
+				canvasline.fillStyle="red";
+				canvasline.arc(padding+linext,cheight-Math.ceil(everyLen*data[i].num)-padding,3,0,Math.PI*2);
+				canvasline.fillText(data[i].num,padding+linext-12,cheight-Math.ceil(everyLen*data[i].num)-padding-8)
+				canvasline.fill();
+
+			}
+	}
+
+}
+lines(data,ydata)
+</script>
